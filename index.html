@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TSA@RHS - RHS Qualifier - TSA Event to Qualifier Event Mapper</title>
+<title>TSA@RHS - RHS Qualifier - TSA Event to Qualifier Event Mapper (2026-27)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -348,7 +348,7 @@
 
   <div class="signup-panel" id="signupPanel">
     <p class="signup-panel-title">Your Super Saturday sign-up list</p>
-    <p class="signup-panel-sub">These are the qualifier slots you (or your team captain) will need to sign up for, based on what's checked below.</p>
+    <p class="signup-panel-sub">These are the qualifier slots you (or your team captain) will need to sign up for, based on what's checked below. You can find event specificatinos for the RHS qualifier in Canvas\modules.</p>
     <div id="signupItems"></div>
   </div>
 
@@ -409,7 +409,7 @@
       renderPickerList();
     })
     .catch(function (err) {
-      loadingMsg.textContent = 'Could not load the weights file (' + err.message + '). Make sure data/rhs-config-qualifier-event-weights.xlsx is checked into this repo alongside index.html.';
+      loadingMsg.textContent = 'Could not load the weights file (' + err.message + '). The data file should be checked into the repo under data/rhs-config-qualifier-event-weights.xlsx.';
       loadingMsg.className = 'load-error';
     });
 
@@ -451,7 +451,7 @@
       pickerList.appendChild(d);
       return;
     }
-    matches.slice(0, 40).forEach(function (ev) {
+    matches.slice(0, 80).forEach(function (ev) {
       var isPicked = selectedEvents.indexOf(ev.event) !== -1;
       var item = document.createElement('div');
       item.className = 'picker-item' + (isPicked ? ' is-picked' : '');
@@ -673,7 +673,7 @@
       num.innerHTML = '<b>' + fmtWeight(total) + '</b> / 1.0';
       status.classList.toggle('is-full', met);
       led.classList.toggle('is-full', met);
-      statusText.textContent = met ? 'Minimum Weighting Met' : 'Keep going';
+      statusText.textContent = met ? 'Minimum Weighting Met' : 'Minimum Weighting Not Yet Met';
     }
     updateMeter();
 
