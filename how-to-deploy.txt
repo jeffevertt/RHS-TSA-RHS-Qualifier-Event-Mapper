@@ -1,0 +1,14 @@
+## Deploying with GitHub Pages
+
+1. Create a new GitHub repo (or use an existing one) and push these two
+   files/folders to it:
+   - `index.html`
+   - `data/rhs-config-qualifier-event-weights.xlsx`
+2. In the repo, go to **Settings → Pages**.
+3. Under **Source**, choose the branch (usually `main`) and `/ (root)` as
+   the folder, then save.
+4. GitHub will give you a URL like
+   `https://<your-username>.github.io/<repo-name>/` — that's the link to
+   share with students.
+5. Any time you push an updated `.xlsx` file, the live page reflects it
+   within a minute or two (GitHub Pages redeploys automatically on push).

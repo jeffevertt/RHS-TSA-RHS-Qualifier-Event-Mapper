@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSA@RHS - RHS Qualifier - TSA Event to Qualifier Event Mapper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --ink: #0E1720;
+    --panel: #16212C;
+    --panel-hi: #1C2A38;
+    --line: #28394A;
+    --line-soft: #203040;
+    --amber: #F2A93B;
+    --teal: #35D0B0;
+    --text-hi: #EDF2F5;
+    --text-lo: #8496A3;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--text-hi);
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    line-height: 1.5;
+  }
+  .shell {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+  .eyebrow {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    color: var(--text-lo);
+    margin: 0 0 6px;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    margin: 0 0 10px;
+    line-height: 1.15;
+  }
+  .subtitle {
+    font-size: 15px;
+    color: var(--text-lo);
+    margin: 0 0 20px;
+    max-width: 56ch;
+  }
+  .subtitle b { color: var(--text-hi); font-weight: 600; }
+  .intro {
+    font-size: 14px;
+    color: var(--text-hi);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+  }
+  .intro p { margin: 0 0 10px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro b { color: var(--amber); font-weight: 600; }
+
+  .signup-panel {
+    background: var(--panel-hi);
+    border: 1px solid var(--teal);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    display: none;
+  }
+  .signup-panel.is-shown { display: block; }
+  .signup-panel-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--text-hi);
+    margin: 0 0 4px;
+  }
+  .signup-panel-sub {
+    font-size: 13px;
+    color: var(--text-lo);
+    margin: 0 0 12px;
+  }
+  .signup-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 14px;
+  }
+  .signup-item:last-child { border-bottom: none; }
+  .signup-item-name { color: var(--text-hi); }
+  .signup-item-covers { color: var(--teal); font-size: 12.5px; text-align: right; flex-shrink: 0; }
+
+  .picker-wrap { position: relative; margin-bottom: 20px; }
+  .picker-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    color: var(--text-hi);
+    margin: 0 0 8px;
+  }
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 13px 14px;
+  }
+  .search-box:focus-within { border-color: var(--amber); }
+  .search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-hi);
+    font-size: 16px;
+    width: 100%;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .search-box input::placeholder { color: var(--text-lo); }
+  .search-icon { color: var(--text-lo); flex-shrink: 0; }
+
+  .picker-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: var(--panel-hi);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 20;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+    display: none;
+  }
+  .picker-list.is-open { display: block; }
+  .picker-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 14.5px;
+  }
+  .picker-item:last-child { border-bottom: none; }
+  .picker-item:hover { background: var(--line-soft); }
+  .picker-check {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    border: 2px solid var(--line);
+    flex-shrink: 0;
+  }
+  .picker-item.is-picked .picker-check {
+    background: var(--teal);
+    border-color: var(--teal);
+  }
+  .picker-empty { padding: 16px 14px; color: var(--text-lo); font-size: 14px; }
+
+  .selected-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 30px;
+  }
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel-hi);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 6px 8px 6px 12px;
+    font-size: 13px;
+  }
+  .chip button {
+    background: none;
+    border: none;
+    color: var(--text-lo);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .chip button:hover { color: var(--text-hi); }
+
+  #cards { display: flex; flex-direction: column; gap: 24px; }
+
+  .empty-state {
+    padding: 50px 20px;
+    text-align: center;
+    color: var(--text-lo);
+    font-size: 14.5px;
+  }
+  .empty-state b { font-family: 'Space Grotesk', sans-serif; color: var(--text-hi); display: block; font-size: 17px; margin-bottom: 8px; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 22px 22px 6px;
+  }
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .card-remove {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--text-lo);
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 12.5px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .card-remove:hover { color: var(--text-hi); border-color: var(--text-lo); }
+
+  .meter-track {
+    position: relative;
+    height: 22px;
+    background: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+  }
+  .meter-seg { flex: 1; border-right: 1px solid var(--ink); }
+  .meter-seg:last-child { border-right: none; }
+  .meter-fill {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    background: var(--amber);
+    transition: width 0.3s ease, background-color 0.3s ease;
+    border-radius: 3px 0 0 3px;
+  }
+  .meter-fill.is-full { background: var(--teal); border-radius: 3px; }
+  .meter-readout {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 10px;
+  }
+  .meter-number { font-family: 'IBM Plex Mono', monospace; font-size: 14.5px; color: var(--text-lo); }
+  .meter-number b { color: var(--text-hi); font-weight: 600; }
+  .meter-status {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--amber);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .meter-status.is-full { color: var(--teal); }
+  .led { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
+  .led.is-full { background: var(--teal); box-shadow: 0 0 8px var(--teal); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+  @media (prefers-reduced-motion: reduce) { .meter-fill, .led { transition: none; animation: none; } }
+
+  .solo-note { font-size: 13px; color: var(--text-lo); margin: 16px 0 20px; }
+  .solo-note b { color: var(--amber); font-weight: 600; }
+
+  .category { margin-bottom: 18px; }
+  .category-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    color: var(--text-lo);
+    margin: 0 0 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .qrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 2px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .qrow:last-child { border-bottom: none; }
+  .qtoggle {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    flex-shrink: 0;
+    position: relative;
+  }
+  .qtoggle.is-on { border-color: var(--teal); background: var(--teal); }
+  .qtoggle.is-on::after {
+    content: ''; position: absolute; inset: 4px; border-radius: 50%; background: var(--ink);
+  }
+  .qname { flex: 1; font-size: 14.5px; }
+  .qweight { font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; color: var(--text-lo); min-width: 32px; text-align: right; }
+  .qrow.is-checked .qweight { color: var(--teal); }
+  .qbadge {
+    font-size: 11px; color: var(--amber); border: 1px solid var(--amber);
+    border-radius: 3px; padding: 2px 6px; white-space: nowrap;
+  }
+
+  .loading, .load-error {
+    text-align: center;
+    color: var(--text-lo);
+    padding: 60px 20px;
+    font-size: 14.5px;
+  }
+  .load-error { color: var(--amber); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <p class="eyebrow">TSA@RHS · RHS Qualifier</p>
+  <h1>TSA Event → Qualifier Event Mapper</h1>
+  <p class="subtitle">Use this tool to help identify which qualifier events you need to participate in — you have some choice in this. For each TSA event, you'll need to reach at least a <b>1.0 total weighting</b> across the tests and events tied to it.</p>
+
+  <div class="intro">
+    <p>A test or event only needs to be done once — it counts toward every TSA event that lists it, so there's no need to sign up for the same one twice. <b>Portfolio Presentation is the one exception</b>: it's specific to each TSA event, since the content is different each time.</p>
+    <p>For tests, only one teammate needs to take it — if more than one does, the highest score counts for the team.</p>
+  </div>
+
+  <div class="picker-wrap" id="pickerWrap">
+    <p class="picker-label">Add your TSA Events…</p>
+    <div class="search-box">
+      <svg class="search-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Type a TSA event name…" autocomplete="off">
+    </div>
+    <div class="picker-list" id="pickerList"></div>
+  </div>
+
+  <div class="selected-chip-row" id="chipRow"></div>
+
+  <div class="signup-panel" id="signupPanel">
+    <p class="signup-panel-title">Your Super Saturday sign-up list</p>
+    <p class="signup-panel-sub">These are the qualifier slots you (or your team captain) will need to sign up for, based on what's checked below.</p>
+    <div id="signupItems"></div>
+  </div>
+
+  <div id="cards">
+    <div class="empty-state" id="emptyState">
+      <b>No events selected yet</b>
+      Search above and add every TSA event you're weighing — each one gets its own tracker.
+    </div>
+  </div>
+
+  <div class="loading" id="loadingMsg">Loading qualifying weights…</div>
+</div>
+
+<script>
+(function () {
+  var CATEGORY_LABELS = {
+    "Test": "Test",
+    "Portfolio": "Portfolio",
+    "Async-Event": "Async event",
+    "Arena-Event": "Arena event",
+    "Slot-Event": "Slot event"
+  };
+  var CATEGORY_ORDER = ["Portfolio", "Test", "Slot-Event", "Arena-Event", "Async-Event"];
+
+  function categoryLabel(cat) { return CATEGORY_LABELS[cat] || cat; }
+  function fmtWeight(w) { return w.toFixed(1); }
+
+  var EVENTS = [];
+  var selectedEvents = []; // array of event names, in selection order
+  var globalChecked = {}; // qualKey -> bool, shared across cards (except Portfolio, which is per-event)
+
+  function qualKey(eventName, q) {
+    if (q.category === 'Portfolio') return 'PF::' + eventName + '::' + q.name;
+    return 'SH::' + q.category + '::' + q.name;
+  }
+
+  var pickerList = document.getElementById('pickerList');
+  var searchInput = document.getElementById('searchInput');
+  var chipRow = document.getElementById('chipRow');
+  var cardsEl = document.getElementById('cards');
+  var emptyState = document.getElementById('emptyState');
+  var loadingMsg = document.getElementById('loadingMsg');
+  var pickerWrap = document.getElementById('pickerWrap');
+  var signupPanel = document.getElementById('signupPanel');
+  var signupItems = document.getElementById('signupItems');
+
+  fetch('./data/rhs-config-qualifier-event-weights.xlsx')
+    .then(function (res) {
+      if (!res.ok) throw new Error('File not found (' + res.status + ')');
+      return res.arrayBuffer();
+    })
+    .then(function (buf) {
+      var wb = XLSX.read(buf, { type: 'array' });
+      var sheet = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: true });
+      parseRows(rows);
+      loadingMsg.style.display = 'none';
+      renderPickerList();
+    })
+    .catch(function (err) {
+      loadingMsg.textContent = 'Could not load the weights file (' + err.message + '). Make sure data/rhs-config-qualifier-event-weights.xlsx is checked into this repo alongside index.html.';
+      loadingMsg.className = 'load-error';
+    });
+
+  function parseRows(rows) {
+    var headers = rows[0];
+    var qualCols = [];
+    for (var i = 1; i < headers.length - 1; i++) {
+      var h = headers[i];
+      if (!h) continue;
+      var parts = String(h).split('\n');
+      var category, name;
+      if (parts.length === 2) { category = parts[0].trim(); name = parts[1].trim(); }
+      else { category = ''; name = String(h).replace(/\n/g, ' ').trim(); }
+      qualCols.push({ col: i, category: category, name: name });
+    }
+    for (var r = 1; r < rows.length; r++) {
+      var row = rows[r];
+      if (!row || !row[0]) continue;
+      var quals = [];
+      qualCols.forEach(function (q) {
+        var val = row[q.col];
+        if (val) quals.push({ category: q.category, name: q.name, weight: Math.round(val * 100) / 100 });
+      });
+      EVENTS.push({ event: String(row[0]), quals: quals });
+    }
+    EVENTS.sort(function (a, b) { return a.event.localeCompare(b.event); });
+  }
+
+  function renderPickerList(filter) {
+    filter = (filter || '').trim().toLowerCase();
+    var matches = EVENTS.filter(function (e) {
+      return !filter || e.event.toLowerCase().indexOf(filter) !== -1;
+    });
+    pickerList.innerHTML = '';
+    if (matches.length === 0) {
+      var d = document.createElement('div');
+      d.className = 'picker-empty';
+      d.textContent = 'No event matches "' + filter + '"';
+      pickerList.appendChild(d);
+      return;
+    }
+    matches.slice(0, 40).forEach(function (ev) {
+      var isPicked = selectedEvents.indexOf(ev.event) !== -1;
+      var item = document.createElement('div');
+      item.className = 'picker-item' + (isPicked ? ' is-picked' : '');
+      var box = document.createElement('div');
+      box.className = 'picker-check';
+      var label = document.createElement('span');
+      label.textContent = ev.event;
+      item.appendChild(box);
+      item.appendChild(label);
+      item.addEventListener('click', function () { toggleEventSelection(ev.event); });
+      pickerList.appendChild(item);
+    });
+  }
+
+  searchInput.addEventListener('input', function () {
+    renderPickerList(searchInput.value);
+    pickerList.classList.add('is-open');
+  });
+  searchInput.addEventListener('focus', function () {
+    renderPickerList(searchInput.value);
+    pickerList.classList.add('is-open');
+  });
+  document.addEventListener('click', function (e) {
+    if (!pickerWrap.contains(e.target)) pickerList.classList.remove('is-open');
+  });
+
+  function toggleEventSelection(eventName) {
+    var idx = selectedEvents.indexOf(eventName);
+    if (idx === -1) {
+      selectedEvents.push(eventName);
+    } else {
+      selectedEvents.splice(idx, 1);
+    }
+    searchInput.value = '';
+    renderPickerList('');
+    renderChips();
+    renderAll();
+  }
+
+  function renderChips() {
+    chipRow.innerHTML = '';
+    selectedEvents.forEach(function (name) {
+      var chip = document.createElement('div');
+      chip.className = 'chip';
+      var span = document.createElement('span');
+      span.textContent = name;
+      var btn = document.createElement('button');
+      btn.textContent = '×';
+      btn.addEventListener('click', function () { toggleEventSelection(name); });
+      chip.appendChild(span);
+      chip.appendChild(btn);
+      chipRow.appendChild(chip);
+    });
+  }
+
+  function renderAll() {
+    renderCards();
+    renderSignupSummary();
+  }
+
+  function renderCards() {
+    cardsEl.innerHTML = '';
+    if (selectedEvents.length === 0) {
+      cardsEl.appendChild(emptyState);
+      return;
+    }
+    selectedEvents.forEach(function (name) {
+      var ev = EVENTS.find(function (e) { return e.event === name; });
+      if (ev) cardsEl.appendChild(buildCard(ev));
+    });
+  }
+
+  function renderSignupSummary() {
+    // collect every checked qualifier across all selected events, deduped by key
+    var byKey = {};
+    selectedEvents.forEach(function (name) {
+      var ev = EVENTS.find(function (e) { return e.event === name; });
+      if (!ev) return;
+      ev.quals.forEach(function (q) {
+        var key = qualKey(name, q);
+        if (!globalChecked[key]) return;
+        if (!byKey[key]) byKey[key] = { category: q.category, name: q.name, events: [] };
+        if (byKey[key].events.indexOf(name) === -1) byKey[key].events.push(name);
+      });
+    });
+    var keys = Object.keys(byKey);
+    signupItems.innerHTML = '';
+    if (keys.length === 0) {
+      signupPanel.classList.remove('is-shown');
+      return;
+    }
+    signupPanel.classList.add('is-shown');
+    keys.forEach(function (key) {
+      var entry = byKey[key];
+      var row = document.createElement('div');
+      row.className = 'signup-item';
+      var name = document.createElement('span');
+      name.className = 'signup-item-name';
+      name.textContent = categoryLabel(entry.category) + ' — ' + entry.name;
+      var covers = document.createElement('span');
+      covers.className = 'signup-item-covers';
+      covers.textContent = entry.category === 'Portfolio'
+        ? entry.events[0]
+        : (entry.events.length > 1 ? 'covers ' + entry.events.join(', ') : entry.events[0]);
+      row.appendChild(name);
+      row.appendChild(covers);
+      signupItems.appendChild(row);
+    });
+  }
+
+  function buildCard(ev) {
+    var card = document.createElement('div');
+    card.className = 'card';
+
+    var head = document.createElement('div');
+    head.className = 'card-head';
+    var title = document.createElement('p');
+    title.className = 'card-title';
+    title.textContent = ev.event;
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'card-remove';
+    removeBtn.textContent = 'Remove';
+    removeBtn.addEventListener('click', function () { toggleEventSelection(ev.event); });
+    head.appendChild(title);
+    head.appendChild(removeBtn);
+    card.appendChild(head);
+
+    var meterTrack = document.createElement('div');
+    meterTrack.className = 'meter-track';
+    var fill = document.createElement('div');
+    fill.className = 'meter-fill';
+    meterTrack.appendChild(fill);
+    for (var s = 0; s < 10; s++) {
+      var seg = document.createElement('div');
+      seg.className = 'meter-seg';
+      meterTrack.appendChild(seg);
+    }
+    card.appendChild(meterTrack);
+
+    var readout = document.createElement('div');
+    readout.className = 'meter-readout';
+    var num = document.createElement('span');
+    num.className = 'meter-number';
+    var status = document.createElement('span');
+    status.className = 'meter-status';
+    var led = document.createElement('span');
+    led.className = 'led';
+    var statusText = document.createElement('span');
+    status.appendChild(led);
+    status.appendChild(statusText);
+    readout.appendChild(num);
+    readout.appendChild(status);
+    card.appendChild(readout);
+
+    var soloQualifiers = ev.quals.filter(function (q) { return q.weight >= 1.0; });
+    if (soloQualifiers.length > 0) {
+      var soloNote = document.createElement('p');
+      soloNote.className = 'solo-note';
+      var names = soloQualifiers.map(function (q) { return q.name; }).join(', ');
+      var verb = soloQualifiers.length === 1 ? 'reaches' : 'reach';
+      soloNote.innerHTML = '<b>' + names + '</b> ' + verb + ' 1.0 on its own — no other event required if you take that route.';
+      card.appendChild(soloNote);
+    }
+
+    var byCat = {};
+    ev.quals.forEach(function (q, i) {
+      if (!byCat[q.category]) byCat[q.category] = [];
+      byCat[q.category].push({ q: q, idx: i });
+    });
+    var order = CATEGORY_ORDER.concat(Object.keys(byCat).filter(function (c) { return CATEGORY_ORDER.indexOf(c) === -1; }));
+    order.filter(function (c) { return byCat[c]; }).forEach(function (cat) {
+      var items = byCat[cat].sort(function (a, b) { return b.q.weight - a.q.weight; });
+      var catDiv = document.createElement('div');
+      catDiv.className = 'category';
+      var catLabel = document.createElement('p');
+      catLabel.className = 'category-label';
+      catLabel.textContent = categoryLabel(cat);
+      catDiv.appendChild(catLabel);
+      items.forEach(function (item) {
+        var key = qualKey(ev.event, item.q);
+        var isOn = !!globalChecked[key];
+        var row = document.createElement('div');
+        row.className = 'qrow' + (isOn ? ' is-checked' : '');
+        var toggle = document.createElement('div');
+        toggle.className = 'qtoggle' + (isOn ? ' is-on' : '');
+        var qname = document.createElement('span');
+        qname.className = 'qname';
+        qname.textContent = item.q.name;
+        var qweight = document.createElement('span');
+        qweight.className = 'qweight';
+        qweight.textContent = fmtWeight(item.q.weight);
+        row.appendChild(toggle);
+        row.appendChild(qname);
+        if (item.q.weight >= 1.0) {
+          var badge = document.createElement('span');
+          badge.className = 'qbadge';
+          badge.textContent = 'Qualifies alone';
+          row.appendChild(badge);
+        }
+        row.appendChild(qweight);
+        row.addEventListener('click', function () {
+          globalChecked[key] = !globalChecked[key];
+          renderAll();
+        });
+        catDiv.appendChild(row);
+      });
+      card.appendChild(catDiv);
+    });
+
+    function updateMeter() {
+      var total = 0;
+      ev.quals.forEach(function (q) {
+        if (globalChecked[qualKey(ev.event, q)]) total += q.weight;
+      });
+      total = Math.round(total * 100) / 100;
+      var met = total >= 1.0;
+      fill.style.width = Math.min(total, 1) * 100 + '%';
+      fill.classList.toggle('is-full', met);
+      num.innerHTML = '<b>' + fmtWeight(total) + '</b> / 1.0';
+      status.classList.toggle('is-full', met);
+      led.classList.toggle('is-full', met);
+      statusText.textContent = met ? 'Minimum Weighting Met' : 'Keep going';
+    }
+    updateMeter();
+
+    return card;
+  }
+})();
+</script>
+</body>
+</html>
